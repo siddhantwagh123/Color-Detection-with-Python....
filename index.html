@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Detection Tool</title>
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-image: url('https://www.wallpapers13.com/wp-content/uploads/2020/02/Colorful-Butterfly-on-flower-macro-bokeh-flowers-4K-Ultra-HD-Wallpaper-for-Desktop.jpg'); /*'background-image.jpg' with the path to your background image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position:  0.05px 0.05px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.header {
+    background-color: #007bff;
+    color: #fff;
+    padding: 20px 0;
+}
+
+.logo {
+    font-size: 1.5rem;
+    text-align: center;
+}
+
+.main {
+    padding: 40px 0;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffffff;
+}
+
+.hero-description {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 40px;
+    color: #ffffff;
+}
+
+.upload-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-btn:hover {
+    background-color: #0056b3;
+}
+
+.image-preview {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#selectedImage {
+    max-width: 100%;
+    cursor: pointer; 
+}
+
+.color-info, .hex-info, .rgb-info {
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin-top: 20px;
+}
+
+.hex-info::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #ccc transparent;
+}
+
+.footer {
+    background-color: #f5f5f5;
+    padding: 20px 0;
+    text-align: center;
+}
+#hexValue {
+    color: rgb(255, 255, 255); /* Change 'red' to the color you desire */
+}
+</style>
+
+</head>
+<body>
+
+<header class="header">
+    <div class="container">
+        <h1 class="logo">Color Detection Tool</h1>
+    </div>
+</header>
+
+<main class="main">
+    <div class="container">
+        <section class="hero">
+            <h2 class="hero-title">Identify Colors in Images</h2>
+            <p class="hero-description">Upload an image and click on a pixel to discover its color along with its RGB values.</p>
+        </section>
+
+        <section class="upload-section">
+            <label for="fileInput" class="upload-btn">Choose Image</label>
+            <input type="file" id="fileInput" name="file" accept="image/*" style="display: none;" onchange="previewImage()">
+        </section>
+
+        <section class="image-preview" id="imagePreview">
+            <img id="selectedImage" src="https://i.redd.it/fresh-colorful-wallpapers-resolutions-minimum-4k-and-above-v0-hrqp1iwg9q8b1.jpg?width=5600&format=pjpg&auto=webp&s=cde9fb5aa13d4820cd3565a0fa6cc66b4ab87fe7" alt="Selected Image" onclick="getPixelColor(event)">
+        </section>
+
+        <section class="color-info" id="colorInfo">
+            <div id="colorName"></div>
+        </section>
+
+        <section class="hex-info" id="hexInfo">
+            <div id="hexValue"></div>
+        </section>
+
+        <section class="rgb-info" id="rgbInfo">
+            <div id="rgbValues"></div>
+        </section>
+    </div>
+</main>
+
+<footer class="footer">
+    <div class="container">
+        <p>&copy; Colors are something that makes our World Beautiful</p>
+    </div>
+</footer>
+
+<script>
+function previewImage() {
+    var fileInput = document.getElementById('fileInput');
+    var selectedImage = document.getElementById('selectedImage');
+    var colorNameElement = document.getElementById('colorName');
+    var rgbValuesElement = document.getElementById('rgbValues');
+
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+
+    reader.onload = function(e) {
+        selectedImage.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+}
+
+function getPixelColor(event) {
+    var img = document.getElementById("selectedImage");
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+    var x = event.offsetX;
+    var y = event.offsetY;
+
+    var pixel = ctx.getImageData(x, y, 1, 1);
+    var data = pixel.data;
+
+    var rgb = { r: data[0], g: data[1], b: data[2] };
+
+    fetchColorNameFromBackend(rgb);
+}
+
+function fetchColorNameFromBackend(rgb) {
+    fetch('/get_color_info', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(rgb)
+    })
+    .then(response => response.json())
+    .then(data => {
+        var colorNameElement = document.getElementById('colorName');
+        var rgbValuesElement = document.getElementById('rgbValues');
+        var hexValueElement = document.getElementById('hexValue');
+        var hexInfoSection = document.getElementById('hexInfo');
+
+        colorNameElement.innerText = "Color Name: " + data.colorName;
+        rgbValuesElement.innerText = "RGB Values: R=" + data.r + ", G=" + data.g + ", B=" + data.b;
+
+        // Calculate hexadecimal color value
+        var hexValue = rgbToHex(data.r, data.g, data.b);
+        hexValueElement.innerText = "Hexadecimal Value: " + hexValue;
+
+        // Set background color of hex-info section to match the hexadecimal color value
+        hexInfoSection.style.backgroundColor = hexValue;
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Function to convert RGB to hexadecimal
+function componentToHex(c) {
+    var hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+}
+
+function rgbToHex(r, g, b) {
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+</script>
+
+</body>
+</html>
